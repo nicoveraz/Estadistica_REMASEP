@@ -2,4 +2,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    vertical-align: middle;
+    height: 100vh;
+}
+
+.center * {
+    display: block;
 }
