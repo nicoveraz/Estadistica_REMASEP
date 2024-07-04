@@ -11,4 +11,8 @@ function handleFileSelect(event) {
         alert('Por favor seleccione un archivo Excel con la extensión .xlsx');
         selectedFile = null;
     }
+
+    document.getElementById('button').disabled = false;
+
+
 }
