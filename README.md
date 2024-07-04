@@ -30,7 +30,7 @@ REMASEP
 │   └── REMASEP.xlsx
 │
 └── Informe_Procesado
-    └── > ubicación final del informe prellenado
+    └──> Ubicación final del informe prellenado
 ```
 
 ## ROADMAP
