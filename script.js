@@ -1,4 +1,5 @@
 document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+document.getElementById('button').disabled = true;
 
 let selectedFile;
 
