@@ -20,6 +20,7 @@ Este sitio web es una derivación del cuaderno python original, utiliza funcione
 
 Requiere la siguiente estructura:
 
+```
 REMASEP
 │
 ├── Datos_MK
@@ -30,5 +31,6 @@ REMASEP
 │
 └── Informe_Procesado
     └── > ubicación final del informe prellenado
+```
 
 ## ROADMAP
