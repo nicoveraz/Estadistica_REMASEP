@@ -10,27 +10,12 @@ Es una versión web del python notebook utilizado en Clínica Puerto Montt ACHS 
 
 ## Metodología
 
-¿Por qué un sitio web para esto?
+¿Por qué un cuaderno python y luego un sitio web para esto?
 
->Porque no se utilizar excel
+>Porque no sé utilizar excel
 
-Este sitio web es una derivación del cuaderno python original, utiliza funciones javascript para procesar los datos del reporte excel a nivel local y llenar sobre la plantilla contenida en la carpeta seleccionada
+Este sitio web es una derivación del cuaderno python original, utiliza funciones javascript para procesar los datos del reporte excel a nivel local y llenar sobre la plantilla en blanco
 
 ## Instrucciones de Uso
-
-Requiere la siguiente estructura:
-
-```
-REMASEP
-│
-├── Datos_MK
-│   └── Reporte_MK.xlsx
-│
-├── Original
-│   └── REMASEP.xlsx
-│
-└── Informe_Procesado
-    └──> Ubicación final del informe prellenado
-```
 
 ## ROADMAP
