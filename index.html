@@ -13,6 +13,7 @@
             justify-content: center;
             align-items: center;
             font-family: Arial, sans-serif;
+            line-height: 3rem;
         }
         .container {
             display: flex;
@@ -31,7 +32,6 @@
     <div class="container">
         <h1>Proceso Datos REMASEP</h1>
         <p>Seleccione un archivo Excel con la extensión .xlsx:</p>
-        <label for="fileInput">Archivo Excel:</label>
         <input type="file" id="fileInput" aria-label="Archivo Excel" accept=".xlsx" lang="es">
         <p>Archivo seleccionado: <span id="selectedFileName"></span></p>
         <button onclick="processFile()">Procesar Archivo</button>
