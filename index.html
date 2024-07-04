@@ -21,12 +21,20 @@
         }
         input {
             margin-bottom: 10px;
+            display: block;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
         }
     </style>
 </head>
 <body>
+    <a href="https://github.com/nicoveraz/Estadistica_REMASEP" target="_blank" style="position: absolute; top: 0; right: 0; padding: 10px;">
+        <img src="https://github.com/fluidicon.png" alt="GitHub" width="30" height="30">
+    </a>
     <input type="file" id="fileInput" aria-label="Subir Archivo Excel" accept=".xlsx">
-    <button onclick="processFile()">Process File</button>
+    <button onclick="processFile()">Procesar Archivo</button>
     <script src="script.js"></script>
 </body>
 </html>
