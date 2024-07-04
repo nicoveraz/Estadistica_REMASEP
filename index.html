@@ -31,7 +31,8 @@
     <div class="container">
         <h1>Proceso Datos REMASEP</h1>
         <p>Seleccione un archivo Excel con la extensión .xlsx:</p>
-        <input type="file" id="fileInput" aria-label="Subir Archivo Excel" accept=".xlsx">
+        <label for="fileInput">Archivo Excel:</label>
+        <input type="file" id="fileInput" aria-label="Archivo Excel" accept=".xlsx" lang="es">
         <p>Archivo seleccionado: <span id="selectedFileName"></span></p>
         <button onclick="processFile()">Procesar Archivo</button>
         <p id="result"></p>
