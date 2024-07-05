@@ -9,8 +9,8 @@ function handleFileSelect(event) {
     const fileName = selectedFile ? selectedFile.name : '';
     const processButton = document.getElementById('processButton');
 
-    if (!fileName.endsWith('.xls') && !fileName.endsWith('.xlsx')) {
-        alert('Please select an Excel file with .xls or .xlsx extension.');
+    if (!fileName.endsWith('.xls')) {
+        alert('Please select an Excel file with .xls');
         selectedFile = null;
         processButton.disabled = true;
     } else {
