@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Proceso Datos REMASEP</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <title>Excel Data Processing</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body, html {
             height: 100%;
@@ -13,7 +13,6 @@
             justify-content: center;
             align-items: center;
             font-family: Arial, sans-serif;
-            line-height: 3rem;
         }
         .container {
             display: flex;
@@ -27,20 +26,25 @@
             background-color: #ccc;
             cursor: not-allowed;
         }
+        a {
+            position: fixed;
+            top: 0;
+            right: 0;
+            padding: 10px;
+        }
+
+
+
     </style>
 </head>
 <body>
-    <a href="https://github.com/nicoveraz/Estadistica_REMASEP" target="_blank" style="position: absolute; top: 0; right: 0; padding: 10px;">
-        <img src="https://github.com/fluidicon.png" alt="GitHub" width="30" height="30">
+    <a href="https://github.com/your-username/your-repo" target="_blank">
+        <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
     </a>
     <div class="container">
-        <h1>Proceso Datos REMASEP</h1>
-        <p>Seleccione un archivo Excel con la extensión .xlsx:</p>
-        <input type="file" id="fileInput" aria-label="Archivo Excel" accept=".xlsx" lang="es">
-        <p>Archivo seleccionado: <span id="selectedFileName"></span></p>
-        <button id="button" onclick="processFile()" disabled>Procesar Archivo</button>
-        <p id="result"></p>
+        <input type="file" id="fileInput">
+        <button id="processButton" disabled>Process File</button>
     </div>
-    <script src="script.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
