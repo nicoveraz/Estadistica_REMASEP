@@ -9,7 +9,7 @@ function handleFileSelect(event) {
 
     // Check for .xlsx extension
     if (!fileName.endsWith('.xls')) {
-        alert('Please select an Excel file with .xlsx extension.');
+        alert('Please select an Excel file with .xls extension.');
         selectedFile = null;
         processButton.disabled = true;
     } else {
