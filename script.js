@@ -1,10 +1,7 @@
-// Global variable to store the selected file
-let selectedFile;
-
-// Event listener for file input change
 document.getElementById('fileInput').addEventListener('change', handleFileSelect);
 
-// Function to handle file selection
+let selectedFile;
+
 function handleFileSelect(event) {
     selectedFile = event.target.files[0];
     const fileName = selectedFile ? selectedFile.name : '';
@@ -258,6 +255,12 @@ function writeCell(sheet, cellAddress, value) {
     cell.value = value;
 }
 
+function ensureRowExists(sheet, rowNumber) {
+    if (!sheet.getRow(rowNumber).hasValues) {
+        sheet.getRow(rowNumber).values = [];
+    }
+}
+
 function writeSectionA(sheet, dfAge) {
     const startRow = 12;
     const startColumn = 5; // Column 'E'
@@ -269,6 +272,7 @@ function writeSectionA(sheet, dfAge) {
         const maleCell = `${String.fromCharCode(64 + maleColumn)}${startRow}`;
         const femaleCell = `${String.fromCharCode(64 + femaleColumn)}${startRow}`;
 
+        ensureRowExists(sheet, startRow);
         writeCell(sheet, maleCell, dfAge[group]['Hombres'] || 0);
         writeCell(sheet, femaleCell, dfAge[group]['Mujeres'] || 0);
     });
@@ -291,6 +295,7 @@ function writeSectionB(sheet, dfAgeTriage) {
         const row = categorizacionToRow[triage];
         const column = baseColumn + (parseInt(ageGroup) - 1) * 2 + (gender === 'F' ? 1 : 0);
 
+        ensureRowExists(sheet, row);
         const cell = `${String.fromCharCode(64 + column)}${row}`;
         writeCell(sheet, cell, count);
     });
@@ -301,6 +306,7 @@ function writeSectionC(sheet, dfInter) {
     const colD = 4; // Column 'D' is the 4th column (1-based index)
 
     for (let rowIndex = startRow; rowIndex < 50; rowIndex++) {
+        ensureRowExists(sheet, rowIndex);
         const specialtyCell = sheet.getCell(`A${rowIndex}`);
         const specialty = specialtyCell.value;
         if (specialty && dfInter[specialty]) {
@@ -320,6 +326,8 @@ function writeSectionD(sheet, dfHosp, dfRechazo) {
         const { count, fonasa: fonasaCount } = dfHosp[key];
         const row = baseRow + parseInt(timeGroup) - 1;
         const column = baseColumn + (parseInt(ageGroup) - 1) * 2 + (gender === 'F' ? 1 : 0);
+
+        ensureRowExists(sheet, row);
         const cell = `${String.fromCharCode(64 + column)}${row}`;
         writeCell(sheet, cell, count);
 
@@ -333,11 +341,12 @@ function writeSectionD(sheet, dfHosp, dfRechazo) {
         const { count, fonasa: fonasaCount } = dfRechazo[key];
         const row = rechazoBaseRow;
         const column = baseColumn + (parseInt(ageGroup) - 1) * 2 + (gender === 'F' ? 1 : 0);
+
+        ensureRowExists(sheet, row);
         const cell = `${String.fromCharCode(64 + column)}${row}`;
         writeCell(sheet, cell, count);
 
         const totalCell = `${String.fromCharCode(64 + totalColumn)}${row}`;
-
         writeCell(sheet, totalCell, (sheet.getCell(totalCell).value || 0) + fonasaCount);
     });
 }
