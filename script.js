@@ -7,9 +7,9 @@ function handleFileSelect(event) {
     const fileName = selectedFile ? selectedFile.name : '';
     const processButton = document.getElementById('processButton');
 
-    // Check for .xls extension
+    // Check for .xlsx extension
     if (!fileName.endsWith('.xls')) {
-        alert('El archivo debe tener la extensión .xls.');
+        alert('Por favor selecciones un archivo con la extensión .xls.');
         selectedFile = null;
         processButton.disabled = true;
     } else {
@@ -83,7 +83,6 @@ const specialtyMapping = {
 
 // Main processing function
 async function processExcelFile(inputFile) {
-    const ExcelJS = window.ExcelJS;
     const workbook = new ExcelJS.Workbook();
 
     // Read the input data
@@ -140,12 +139,25 @@ async function processExcelFile(inputFile) {
 function readExcelFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type: 'array'});
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            resolve(XLSX.utils.sheet_to_json(worksheet));
+        reader.onload = async (e) => {
+            const workbook = new ExcelJS.Workbook();
+            await workbook.xlsx.load(e.target.result);
+            const worksheet = workbook.getWorksheet(1);
+            const rows = [];
+            worksheet.eachRow({ includeEmpty: true }, (row) => {
+                const rowValues = row.values;
+                rowValues.shift(); // Remove the first element which is undefined
+                rows.push(rowValues);
+            });
+            const headers = rows.shift();
+            const data = rows.map(row => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = row[index];
+                });
+                return obj;
+            });
+            resolve(data);
         };
         reader.onerror = reject;
         reader.readAsArrayBuffer(file);
@@ -166,6 +178,7 @@ function formatDate(date) {
     return date.toISOString().slice(0, 10).replace(/-/g, '');
 }
 
+// Helper functions for generating summary data
 function generateAgeSummary(data) {
     const ageSummary = {};
     data.forEach(row => {
