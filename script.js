@@ -88,6 +88,90 @@ const specialtyMapping = {
     'URGENCIOLOGO': 'URGENCIÓLOGO'
 };
 
+// Main processing function
+async function processExcelFile(inputFile) {
+    // Read the input data
+    const inputData = await readExcelFile(inputFile);
+    
+    // Extract first and last dates
+    const { firstDate, lastDate } = extractDates(inputData);
+    
+    // Fetch the template file (Urgencia.xlsx)
+    const templateResponse = await fetch('./en_blanco/Urgencia.xlsx');
+    const templateArrayBuffer = await templateResponse.arrayBuffer();
+    
+    // Load the template workbook using ExcelJS
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(templateArrayBuffer);
+    
+    // Get the first sheet
+    const sheet = workbook.getWorksheet(1);
+  
+    // Process the input data
+    const cleanedData = inputData.filter(row => row['Diagnóstico'] !== 'NO ESPERA ATENCIÓN' && row['Diagnóstico'] !== 'MAL INGRESADO - FOLIO NULO');
+  
+    const processedData = cleanedData.map(row => ({
+        ...row,
+        Age_Group: classifyAge(parseFloat(row['Edad_Años'])),
+        Time_ER: (new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60),
+        Time_ER_Group: classifyTime((new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60)),
+        FONASA: classifyPrevision(row['NOMPREVI'])
+    }));
+  
+    // Generate summary data
+    const dfAge = generateAgeSummary(processedData);
+    const dfAgeTriage = generateAgeTriageSummary(processedData);
+    const dfInter = generateInterSummary(processedData);
+    const dfHosp = generateHospSummary(processedData);
+    const dfRechazo = generateRechazoSummary(processedData);
+  
+    // Write sections
+    writeSectionA(sheet, dfAge);
+    writeSectionB(sheet, dfAgeTriage);
+    writeSectionC(sheet, dfInter);
+    writeSectionD(sheet, dfHosp, dfRechazo);
+    // ... Add more sections as needed
+  
+    // Generate filename and download the file
+    const filename = `REMASEP_${formatDate(firstDate)}_${formatDate(lastDate)}.xlsx`;
+    await workbook.xlsx.writeBuffer().then(buffer => {
+        saveAs(new Blob([buffer]), filename);
+    });
+}
+
+// File reading function using XLSX
+function readExcelFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            resolve(XLSX.utils.sheet_to_json(worksheet));
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+// Function to extract first and last dates
+function extractDates(data) {
+    const dates = data.map(row => new Date(row['Ingreso'])).sort((a, b) => a - b);
+    return {
+        firstDate: dates[0],
+        lastDate: dates[dates.length - 1]
+    };
+}
+
+// Function to format date as YYYYMMDD
+function formatDate(date) {
+    return date.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+// Helper functions for generating summary data
+// ... [Keep these functions as they were in the original code]
+
 // Helper function for writing data to Excel while preserving styles
 function writeCell(sheet, cellAddress, value) {
     const cell = sheet.getCell(cellAddress);
