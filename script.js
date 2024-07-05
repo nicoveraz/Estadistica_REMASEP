@@ -7,9 +7,9 @@ function handleFileSelect(event) {
     const fileName = selectedFile ? selectedFile.name : '';
     const processButton = document.getElementById('processButton');
 
-    // Check for .xls or .xlsx extension
-    if (!fileName.endsWith('.xls') && !fileName.endsWith('.xlsx')) {
-        alert('Por favor seleccione un archivo con la extensión .xls o .xlsx.');
+    // Check for .xlsx extension
+    if (!fileName.endsWith('.xlsx')) {
+        alert('Please select an Excel file with .xlsx extension.');
         selectedFile = null;
         processButton.disabled = true;
     } else {
@@ -64,7 +64,7 @@ const specialtyMapping = {
     'CIRUGÍA DIGESTIVA Y COLOPROCTO': 'CIRUGÍA GENERAL',
     'CIRUGIA PLASTICA': 'CIRUGÍA DE CABEZA, CUELLO Y MAXILOFACIAL',
     'CIRUGIA GENERAL': 'CIRUGÍA GENERAL',
-    'BRONCOPULMONAR ADULTO': 'MEDICINA INTERNA',
+    'BRONCOPULMONAR ADULTO': 'MEDICINA INTERNA',  // Adjusted mapping as needed
     'NEUROLOGIA': 'NEUROLOGÍA ADULTOS',
     'NEUROCIRUGIA': 'NEUROCIRUGÍA',
     'MAXILOFACIAL': 'CIRUGÍA DE CABEZA, CUELLO Y MAXILOFACIAL',
@@ -81,100 +81,69 @@ const specialtyMapping = {
     'URGENCIOLOGO': 'URGENCIÓLOGO'
 };
 
-// Updated File reading function
-async function readExcelFile(file) {
+// Main processing function
+async function processExcelFile(inputFile) {
+    // Read the input data
+    const inputData = await readExcelFile(inputFile);
+    
+    // Extract first and last dates
+    const { firstDate, lastDate } = extractDates(inputData);
+    
+    // Fetch the template file (Urgencia.xlsx)
+    const templateResponse = await fetch('./en_blanco/Urgencia.xlsx');
+    const templateArrayBuffer = await templateResponse.arrayBuffer();
+    
+    // Load the template workbook
+    const workbook = XLSX.read(new Uint8Array(templateArrayBuffer), {type: 'array'});
+    
+    // Get the first sheet
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+  
+    // Process the input data
+    const cleanedData = inputData.filter(row => row['Diagnóstico'] !== 'NO ESPERA ATENCIÓN' && row['Diagnóstico'] !== 'MAL INGRESADO - FOLIO NULO');
+  
+    const processedData = cleanedData.map(row => ({
+        ...row,
+        Age_Group: classifyAge(parseFloat(row['Edad_Años'])),
+        Time_ER: (new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60),
+        Time_ER_Group: classifyTime((new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60)),
+        FONASA: classifyPrevision(row['NOMPREVI'])
+    }));
+  
+    // Generate summary data
+    const dfAge = generateAgeSummary(processedData);
+    const dfAgeTriage = generateAgeTriageSummary(processedData);
+    const dfInter = generateInterSummary(processedData);
+    const dfHosp = generateHospSummary(processedData);
+    const dfRechazo = generateRechazoSummary(processedData);
+  
+    // Write sections
+    writeSectionA(sheet, dfAge);
+    writeSectionB(sheet, dfAgeTriage);
+    writeSectionC(sheet, dfInter);
+    writeSectionD(sheet, dfHosp, dfRechazo);
+    // ... Add more sections as needed
+  
+    // Generate filename and download the file
+    const filename = `REMASEP_${formatDate(firstDate)}_${formatDate(lastDate)}.xlsx`;
+    XLSX.writeFile(workbook, filename);
+}
+
+// File reading function
+function readExcelFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
-                
-                // Process the data
-                const headers = jsonData[0];
-                const rows = jsonData.slice(1);
-                const processedData = rows.map(row => {
-                    const obj = {};
-                    headers.forEach((header, index) => {
-                        obj[header] = row[index];
-                    });
-                    return obj;
-                });
-                
-                resolve(processedData);
-            } catch (error) {
-                reject(error);
-            }
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            resolve(XLSX.utils.sheet_to_json(worksheet));
         };
         reader.onerror = reject;
         reader.readAsArrayBuffer(file);
     });
-}
-
-// Updated main processing function
-async function processExcelFile(inputFile) {
-    try {
-        // Read the input data
-        const inputData = await readExcelFile(inputFile);
-        
-        // Extract first and last dates
-        const { firstDate, lastDate } = extractDates(inputData);
-        
-        // Create a new workbook
-        const workbook = new ExcelJS.Workbook();
-        
-        // Load the template workbook
-        const templateResponse = await fetch('./en_blanco/Urgencia.xlsx');
-        const templateArrayBuffer = await templateResponse.arrayBuffer();
-        await workbook.xlsx.load(templateArrayBuffer);
-
-        // Get the first sheet
-        const sheet = workbook.getWorksheet(1);
-
-        if (!sheet) {
-            throw new Error('Worksheet not found in the template file.');
-        }
-      
-        // Process the input data
-        const cleanedData = inputData.filter(row => row['Diagnóstico'] !== 'NO ESPERA ATENCIÓN' && row['Diagnóstico'] !== 'MAL INGRESADO - FOLIO NULO');
-      
-        const processedData = cleanedData.map(row => ({
-            ...row,
-            Age_Group: classifyAge(parseFloat(row['Edad_Años'])),
-            Time_ER: (new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60),
-            Time_ER_Group: classifyTime((new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60)),
-            FONASA: classifyPrevision(row['NOMPREVI'])
-        }));
-      
-        // Generate summary data
-        const dfAge = generateAgeSummary(processedData);
-        const dfAgeTriage = generateAgeTriageSummary(processedData);
-        const dfInter = generateInterSummary(processedData);
-        const dfHosp = generateHospSummary(processedData);
-        const dfRechazo = generateRechazoSummary(processedData);
-      
-        // Write sections
-        writeSectionA(sheet, dfAge);
-        writeSectionB(sheet, dfAgeTriage);
-        writeSectionC(sheet, dfInter);
-        writeSectionD(sheet, dfHosp, dfRechazo);
-      
-        // Generate filename and download the file
-        const filename = `REMASEP_${formatDate(firstDate)}_${formatDate(lastDate)}.xlsx`;
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        link.click();
-    } catch (error) {
-        console.error('Error processing Excel file:', error);
-        console.error('Error stack:', error.stack);
-        alert('An error occurred while processing the file. Please check the console for more details.');
-    }
 }
 
 // Function to extract first and last dates
@@ -206,12 +175,20 @@ function generateAgeSummary(data) {
 }
 
 function generateAgeTriageSummary(data) {
-    const ageTriageSummary = {};
+    const ageTriageSummary = [];
     data.forEach(row => {
-        const key = `${row.Age_Group}_${row.sexo}_${row.Categorización}`;
-        ageTriageSummary[key] = (ageTriageSummary[key] || 0) + 1;
+        ageTriageSummary.push({
+            Age_Group: row.Age_Group,
+            sexo: row.sexo,
+            Categorización: row.Categorización,
+            count: 1
+        });
     });
-    return ageTriageSummary;
+    return ageTriageSummary.reduce((acc, curr) => {
+        const key = `${curr.Age_Group}_${curr.sexo}_${curr.Categorización}`;
+        acc[key] = (acc[key] || 0) + curr.count;
+        return acc;
+    }, {});
 }
 
 function generateInterSummary(data) {
@@ -251,13 +228,10 @@ function generateRechazoSummary(data) {
 
 // Helper functions for writing data to Excel while preserving styles
 function writeCell(sheet, cellAddress, value) {
-    const cell = sheet.getCell(cellAddress);
-    cell.value = value;
-}
-
-function ensureRowExists(sheet, rowNumber) {
-    if (!sheet.getRow(rowNumber).hasValues) {
-        sheet.getRow(rowNumber).values = [];
+    if (!sheet[cellAddress]) {
+        sheet[cellAddress] = { t: 'n', v: value };
+    } else {
+        sheet[cellAddress].v = value;
     }
 }
 
@@ -269,16 +243,16 @@ function writeSectionA(sheet, dfAge) {
         const maleColumn = startColumn + 2 * index;
         const femaleColumn = startColumn + 2 * index + 1;
 
-        const maleCell = `${String.fromCharCode(64 + maleColumn)}${startRow}`;
-        const femaleCell = `${String.fromCharCode(64 + femaleColumn)}${startRow}`;
+        const maleCell = XLSX.utils.encode_cell({ r: startRow - 1, c: maleColumn });
+        const femaleCell = XLSX.utils.encode_cell({ r: startRow - 1, c: femaleColumn });
 
-        ensureRowExists(sheet, startRow);
         writeCell(sheet, maleCell, dfAge[group]['Hombres'] || 0);
         writeCell(sheet, femaleCell, dfAge[group]['Mujeres'] || 0);
     });
 }
 
 function writeSectionB(sheet, dfAgeTriage) {
+    const startRow = 21;
     const baseColumn = 5; // Column 'E'
     const categorizacionToRow = {
         '1': 21,
@@ -295,44 +269,40 @@ function writeSectionB(sheet, dfAgeTriage) {
         const row = categorizacionToRow[triage];
         const column = baseColumn + (parseInt(ageGroup) - 1) * 2 + (gender === 'F' ? 1 : 0);
 
-        ensureRowExists(sheet, row);
-        const cell = `${String.fromCharCode(64 + column)}${row}`;
+        const cell = XLSX.utils.encode_cell({ r: row - 1, c: column });
         writeCell(sheet, cell, count);
     });
 }
 
 function writeSectionC(sheet, dfInter) {
     const startRow = 31;
-    const colD = 4; // Column 'D' is the 4th column (1-based index)
+    const colD = 3; // Column 'D'
 
     for (let rowIndex = startRow; rowIndex < 50; rowIndex++) {
-        ensureRowExists(sheet, rowIndex);
-        const specialtyCell = sheet.getCell(`A${rowIndex}`);
-        const specialty = specialtyCell.value;
+        const specialtyCell = XLSX.utils.encode_cell({ r: rowIndex - 1, c: 0 });
+        const specialty = sheet[specialtyCell] ? sheet[specialtyCell].v : null;
         if (specialty && dfInter[specialty]) {
-            const cell = sheet.getCell(`D${rowIndex}`);
-            cell.value = dfInter[specialty];
+            const cell = XLSX.utils.encode_cell({ r: rowIndex - 1, c: colD });
+            writeCell(sheet, cell, dfInter[specialty]);
         }
     }
 }
 
 function writeSectionD(sheet, dfHosp, dfRechazo) {
     const baseRow = 56;
-    const baseColumn = 6; // Column 'F' is the 6th column (1-based index)
-    const totalColumn = 40; // Column 'AN' is the 40th column (1-based index)
-
+    const baseColumn = 6; // Column 'F'
+    const totalColumn = 39; // Column 'AN'
+    
     Object.keys(dfHosp).forEach((key) => {
         const [ageGroup, gender, timeGroup, fonasa] = key.split('_');
         const { count, fonasa: fonasaCount } = dfHosp[key];
         const row = baseRow + parseInt(timeGroup) - 1;
         const column = baseColumn + (parseInt(ageGroup) - 1) * 2 + (gender === 'F' ? 1 : 0);
-
-        ensureRowExists(sheet, row);
-        const cell = `${String.fromCharCode(64 + column)}${row}`;
+        const cell = XLSX.utils.encode_cell({ r: row - 1, c: column });
         writeCell(sheet, cell, count);
 
-        const totalCell = `${String.fromCharCode(64 + totalColumn)}${row}`;
-        writeCell(sheet, totalCell, (sheet.getCell(totalCell).value || 0) + fonasaCount);
+        const totalCell = XLSX.utils.encode_cell({ r: row - 1, c: totalColumn });
+        writeCell(sheet, totalCell, (sheet[totalCell] ? sheet[totalCell].v : 0) + fonasaCount);
     });
 
     const rechazoBaseRow = 60;
@@ -341,24 +311,17 @@ function writeSectionD(sheet, dfHosp, dfRechazo) {
         const { count, fonasa: fonasaCount } = dfRechazo[key];
         const row = rechazoBaseRow;
         const column = baseColumn + (parseInt(ageGroup) - 1) * 2 + (gender === 'F' ? 1 : 0);
-
-        ensureRowExists(sheet, row);
-        const cell = `${String.fromCharCode(64 + column)}${row}`;
+        const cell = XLSX.utils.encode_cell({ r: row - 1, c: column });
         writeCell(sheet, cell, count);
 
-        const totalCell = `${String.fromCharCode(64 + totalColumn)}${row}`;
-        writeCell(sheet, totalCell, (sheet.getCell(totalCell).value || 0) + fonasaCount);
+        const totalCell = XLSX.utils.encode_cell({ r: row - 1, c: totalColumn });
+        writeCell(sheet, totalCell, (sheet[totalCell] ? sheet[totalCell].v : 0) + fonasaCount);
     });
 }
 
 // Event listener for process button
 document.getElementById('processButton').addEventListener('click', () => {
     if (selectedFile) {
-        processExcelFile(selectedFile).catch(error => {
-            console.error('Error in processExcelFile:', error);
-            alert('An error occurred while processing the file. Please check the console for more details.');
-        });
-    } else {
-        alert('Please select a file first.');
+        processExcelFile(selectedFile).catch(console.error);
     }
 });
