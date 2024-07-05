@@ -117,6 +117,72 @@ async function processExcelFile(inputFile) {
         Time_ER_Group: classifyTime((new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60)),
         FONASA: classifyPrevision(row['NOMPREVI'])
     }));
+
+    // Helper functions for generating summary data
+    function generateAgeSummary(data) {
+        const ageSummary = {};
+        data.forEach(row => {
+            const group = row.Age_Group;
+            const gender = row.sexo;
+            if (!ageSummary[group]) {
+                ageSummary[group] = { Hombres: 0, Mujeres: 0 };
+            }
+            ageSummary[group][gender === 'M' ? 'Hombres' : 'Mujeres'] += 1;
+        });
+        return ageSummary;
+    }
+
+    function generateAgeTriageSummary(data) {
+        const ageTriageSummary = [];
+        data.forEach(row => {
+            ageTriageSummary.push({
+                Age_Group: row.Age_Group,
+                sexo: row.sexo,
+                Categorización: row.Categorización,
+                count: 1
+            });
+        });
+        return ageTriageSummary.reduce((acc, curr) => {
+            const key = `${curr.Age_Group}_${curr.sexo}_${curr.Categorización}`;
+            acc[key] = (acc[key] || 0) + curr.count;
+            return acc;
+        }, {});
+    }
+
+    function generateInterSummary(data) {
+        const interSummary = {};
+        data.forEach(row => {
+            const specialty = specialtyMapping[row['Especialidad Inter']] || row['Especialidad Inter'];
+            interSummary[specialty] = (interSummary[specialty] || 0) + 1;
+        });
+        return interSummary;
+    }
+
+    function generateHospSummary(data) {
+        const hospSummary = {};
+        data.forEach(row => {
+            const key = `${row.Age_Group}_${row.sexo}_${row.Time_ER_Group}_${row.FONASA}`;
+            if (!hospSummary[key]) {
+                hospSummary[key] = { count: 0, fonasa: 0 };
+            }
+            hospSummary[key].count += 1;
+            hospSummary[key].fonasa += row.FONASA;
+        });
+        return hospSummary;
+    }
+    
+    function generateRechazoSummary(data) {
+        const rechazoSummary = {};
+        data.forEach(row => {
+            const key = `${row.Age_Group}_${row.sexo}_${row.Time_ER_Group}_${row.FONASA}`;
+            if (!rechazoSummary[key]) {
+                rechazoSummary[key] = { count: 0, fonasa: 0 };
+            }
+            rechazoSummary[key].count += 1;
+            rechazoSummary[key].fonasa += row.FONASA;
+        });
+        return rechazoSummary;
+    }
   
     // Generate summary data
     const dfAge = generateAgeSummary(processedData);
