@@ -337,3 +337,19 @@ function writeSectionD(sheet, dfHosp, dfRechazo) {
         writeCell(sheet, cell, count);
 
         const totalCell = `${String.fromCharCode(64 + totalColumn)}${row}`;
+
+        writeCell(sheet, totalCell, (sheet.getCell(totalCell).value || 0) + fonasaCount);
+    });
+}
+
+// Event listener for process button
+document.getElementById('processButton').addEventListener('click', () => {
+    if (selectedFile) {
+        processExcelFile(selectedFile).catch(error => {
+            console.error('Error in processExcelFile:', error);
+            alert('An error occurred while processing the file. Please check the console for more details.');
+        });
+    } else {
+        alert('Please select a file first.');
+    }
+});
