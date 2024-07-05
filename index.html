@@ -23,6 +23,10 @@
         input {
             margin-bottom: 10px;
         }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -34,7 +38,7 @@
         <p>Seleccione un archivo Excel con la extensión .xlsx:</p>
         <input type="file" id="fileInput" aria-label="Archivo Excel" accept=".xlsx" lang="es">
         <p>Archivo seleccionado: <span id="selectedFileName"></span></p>
-        <button id="button" onclick="processFile()">Procesar Archivo</button>
+        <button id="button" onclick="processFile()" disabled>Procesar Archivo</button>
         <p id="result"></p>
     </div>
     <script src="script.js"></script>
