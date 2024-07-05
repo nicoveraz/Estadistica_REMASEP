@@ -282,7 +282,7 @@ function writeSectionB(sheet, dfAgeTriage) {
 
 function writeSectionC(sheet, dfInter) {
     const startRow = 31;
-    const colD = 3; // Column 'D'
+    const colD = 4; // Column 'D' is the 4th column (1-based index)
 
     for (let rowIndex = startRow; rowIndex < 50; rowIndex++) {
         const specialtyCell = sheet.getCell(`A${rowIndex}`);
@@ -296,8 +296,8 @@ function writeSectionC(sheet, dfInter) {
 
 function writeSectionD(sheet, dfHosp, dfRechazo) {
     const baseRow = 56;
-    const baseColumn = 6; // Column 'F'
-    const totalColumn = 40; // Column 'AN'
+    const baseColumn = 6; // Column 'F' is the 6th column (1-based index)
+    const totalColumn = 40; // Column 'AN' is the 40th column (1-based index)
 
     Object.keys(dfHosp).forEach((key) => {
         const [ageGroup, gender, timeGroup, fonasa] = key.split('_');
