@@ -7,9 +7,9 @@ function handleFileSelect(event) {
     const fileName = selectedFile ? selectedFile.name : '';
     const processButton = document.getElementById('processButton');
 
-    // Check for .xls extension
-    if (!fileName.endsWith('.xls')) {
-        alert('Seleccionar archivo con extensión .xls.');
+    // Check for .xlsx extension
+    if (!fileName.endsWith('.xlsx')) {
+        alert('Please select an Excel file with .xlsx extension.');
         selectedFile = null;
         processButton.disabled = true;
     } else {
@@ -226,7 +226,15 @@ function generateRechazoSummary(data) {
     return rechazoSummary;
 }
 
-// Helper functions for writing data to Excel
+// Helper functions for writing data to Excel while preserving styles
+function writeCell(sheet, cellAddress, value) {
+    if (!sheet[cellAddress]) {
+        sheet[cellAddress] = { t: 'n', v: value };
+    } else {
+        sheet[cellAddress].v = value;
+    }
+}
+
 function writeSectionA(sheet, dfAge) {
     const startRow = 12;
     const startColumn = 5; // Column 'E'
@@ -238,8 +246,8 @@ function writeSectionA(sheet, dfAge) {
         const maleCell = XLSX.utils.encode_cell({ r: startRow - 1, c: maleColumn });
         const femaleCell = XLSX.utils.encode_cell({ r: startRow - 1, c: femaleColumn });
 
-        sheet[maleCell] = { t: 'n', v: dfAge[group]['Hombres'] || 0 };
-        sheet[femaleCell] = { t: 'n', v: dfAge[group]['Mujeres'] || 0 };
+        writeCell(sheet, maleCell, dfAge[group]['Hombres'] || 0);
+        writeCell(sheet, femaleCell, dfAge[group]['Mujeres'] || 0);
     });
 }
 
@@ -262,7 +270,7 @@ function writeSectionB(sheet, dfAgeTriage) {
         const column = baseColumn + (parseInt(ageGroup) - 1) * 2 + (gender === 'F' ? 1 : 0);
 
         const cell = XLSX.utils.encode_cell({ r: row - 1, c: column });
-        sheet[cell] = { t: 'n', v: count };
+        writeCell(sheet, cell, count);
     });
 }
 
@@ -275,7 +283,7 @@ function writeSectionC(sheet, dfInter) {
         const specialty = sheet[specialtyCell] ? sheet[specialtyCell].v : null;
         if (specialty && dfInter[specialty]) {
             const cell = XLSX.utils.encode_cell({ r: rowIndex - 1, c: colD });
-            sheet[cell] = { t: 'n', v: dfInter[specialty] };
+            writeCell(sheet, cell, dfInter[specialty]);
         }
     }
 }
@@ -291,10 +299,10 @@ function writeSectionD(sheet, dfHosp, dfRechazo) {
         const row = baseRow + parseInt(timeGroup) - 1;
         const column = baseColumn + (parseInt(ageGroup) - 1) * 2 + (gender === 'F' ? 1 : 0);
         const cell = XLSX.utils.encode_cell({ r: row - 1, c: column });
-        sheet[cell] = { t: 'n', v: count };
+        writeCell(sheet, cell, count);
 
         const totalCell = XLSX.utils.encode_cell({ r: row - 1, c: totalColumn });
-        sheet[totalCell] = { t: 'n', v: (sheet[totalCell] ? sheet[totalCell].v : 0) + fonasaCount };
+        writeCell(sheet, totalCell, (sheet[totalCell] ? sheet[totalCell].v : 0) + fonasaCount);
     });
 
     const rechazoBaseRow = 60;
@@ -304,10 +312,10 @@ function writeSectionD(sheet, dfHosp, dfRechazo) {
         const row = rechazoBaseRow;
         const column = baseColumn + (parseInt(ageGroup) - 1) * 2 + (gender === 'F' ? 1 : 0);
         const cell = XLSX.utils.encode_cell({ r: row - 1, c: column });
-        sheet[cell] = { t: 'n', v: count };
+        writeCell(sheet, cell, count);
 
         const totalCell = XLSX.utils.encode_cell({ r: row - 1, c: totalColumn });
-        sheet[totalCell] = { t: 'n', v: (sheet[totalCell] ? sheet[totalCell].v : 0) + fonasaCount };
+        writeCell(sheet, totalCell, (sheet[totalCell] ? sheet[totalCell].v : 0) + fonasaCount);
     });
 }
 
