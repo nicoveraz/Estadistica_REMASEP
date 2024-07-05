@@ -1,15 +1,18 @@
-document.getElementById('fileInput').addEventListener('change', handleFileSelect);
-
+// Global variable to store the selected file
 let selectedFile;
 
+// Event listener for file input change
+document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+
+// Function to handle file selection
 function handleFileSelect(event) {
     selectedFile = event.target.files[0];
     const fileName = selectedFile ? selectedFile.name : '';
     const processButton = document.getElementById('processButton');
 
-    // Check for .xlsx extension
-    if (!fileName.endsWith('.xls')) {
-        alert('Por favor selecciones un archivo con la extensión .xls.');
+    // Check for .xls or .xlsx extension
+    if (!fileName.endsWith('.xls') && !fileName.endsWith('.xlsx')) {
+        alert('Por favor seleccione un archivo con la extensión .xls o .xlsx.');
         selectedFile = null;
         processButton.disabled = true;
     } else {
@@ -64,7 +67,7 @@ const specialtyMapping = {
     'CIRUGÍA DIGESTIVA Y COLOPROCTO': 'CIRUGÍA GENERAL',
     'CIRUGIA PLASTICA': 'CIRUGÍA DE CABEZA, CUELLO Y MAXILOFACIAL',
     'CIRUGIA GENERAL': 'CIRUGÍA GENERAL',
-    'BRONCOPULMONAR ADULTO': 'MEDICINA INTERNA',  // Adjusted mapping as needed
+    'BRONCOPULMONAR ADULTO': 'MEDICINA INTERNA',
     'NEUROLOGIA': 'NEUROLOGÍA ADULTOS',
     'NEUROCIRUGIA': 'NEUROCIRUGÍA',
     'MAXILOFACIAL': 'CIRUGÍA DE CABEZA, CUELLO Y MAXILOFACIAL',
@@ -81,96 +84,100 @@ const specialtyMapping = {
     'URGENCIOLOGO': 'URGENCIÓLOGO'
 };
 
-// Main processing function
+// Updated File reading function
+async function readExcelFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                
+                // Process the data
+                const headers = jsonData[0];
+                const rows = jsonData.slice(1);
+                const processedData = rows.map(row => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index];
+                    });
+                    return obj;
+                });
+                
+                resolve(processedData);
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+// Updated main processing function
 async function processExcelFile(inputFile) {
-    const workbook = new ExcelJS.Workbook();
+    try {
+        // Read the input data
+        const inputData = await readExcelFile(inputFile);
+        
+        // Extract first and last dates
+        const { firstDate, lastDate } = extractDates(inputData);
+        
+        // Create a new workbook
+        const workbook = new ExcelJS.Workbook();
+        
+        // Load the template workbook
+        const templateResponse = await fetch('./en_blanco/Urgencia.xlsx');
+        const templateArrayBuffer = await templateResponse.arrayBuffer();
+        await workbook.xlsx.load(templateArrayBuffer);
 
-    // Read the input data
-    const inputData = await readExcelFile(inputFile);
-    
-    // Extract first and last dates
-    const { firstDate, lastDate } = extractDates(inputData);
-    
-    // Load the template workbook
-    const templateResponse = await fetch('./en_blanco/Urgencia.xlsx');
-    const templateArrayBuffer = await templateResponse.arrayBuffer();
-    await workbook.xlsx.load(templateArrayBuffer);
+        // Get the first sheet
+        const sheet = workbook.getWorksheet(1);
 
-    // Get the first sheet
-    const sheet = workbook.getWorksheet(1);
-
-    if (!sheet) {
-        console.error('Worksheet not found in the template file.');
-        return;
-    }
-  
-    // Process the input data
-    const cleanedData = inputData.filter(row => row['Diagnóstico'] !== 'NO ESPERA ATENCIÓN' && row['Diagnóstico'] !== 'MAL INGRESADO - FOLIO NULO');
-  
-    const processedData = cleanedData.map(row => ({
-        ...row,
-        Age_Group: classifyAge(parseFloat(row['Edad_Años'])),
-        Time_ER: (new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60),
-        Time_ER_Group: classifyTime((new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60)),
-        FONASA: classifyPrevision(row['NOMPREVI'])
-    }));
-  
-    // Generate summary data
-    const dfAge = generateAgeSummary(processedData);
-    const dfAgeTriage = generateAgeTriageSummary(processedData);
-    const dfInter = generateInterSummary(processedData);
-    const dfHosp = generateHospSummary(processedData);
-    const dfRechazo = generateRechazoSummary(processedData);
-  
-    // Write sections
-    writeSectionA(sheet, dfAge);
-    writeSectionB(sheet, dfAgeTriage);
-    writeSectionC(sheet, dfInter);
-    writeSectionD(sheet, dfHosp, dfRechazo);
-    // ... Add more sections as needed
-  
-    // Generate filename and download the file
-    const filename = `REMASEP_${formatDate(firstDate)}_${formatDate(lastDate)}.xlsx`;
-    workbook.xlsx.writeBuffer().then((buffer) => {
+        if (!sheet) {
+            throw new Error('Worksheet not found in the template file.');
+        }
+      
+        // Process the input data
+        const cleanedData = inputData.filter(row => row['Diagnóstico'] !== 'NO ESPERA ATENCIÓN' && row['Diagnóstico'] !== 'MAL INGRESADO - FOLIO NULO');
+      
+        const processedData = cleanedData.map(row => ({
+            ...row,
+            Age_Group: classifyAge(parseFloat(row['Edad_Años'])),
+            Time_ER: (new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60),
+            Time_ER_Group: classifyTime((new Date(row['Egreso']) - new Date(row['Ingreso'])) / (1000 * 60 * 60)),
+            FONASA: classifyPrevision(row['NOMPREVI'])
+        }));
+      
+        // Generate summary data
+        const dfAge = generateAgeSummary(processedData);
+        const dfAgeTriage = generateAgeTriageSummary(processedData);
+        const dfInter = generateInterSummary(processedData);
+        const dfHosp = generateHospSummary(processedData);
+        const dfRechazo = generateRechazoSummary(processedData);
+      
+        // Write sections
+        writeSectionA(sheet, dfAge);
+        writeSectionB(sheet, dfAgeTriage);
+        writeSectionC(sheet, dfInter);
+        writeSectionD(sheet, dfHosp, dfRechazo);
+      
+        // Generate filename and download the file
+        const filename = `REMASEP_${formatDate(firstDate)}_${formatDate(lastDate)}.xlsx`;
+        const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = filename;
         link.click();
-    });
-}
-
-// File reading function
-function readExcelFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const workbook = new ExcelJS.Workbook();
-            await workbook.xlsx.load(e.target.result);
-            const worksheet = workbook.getWorksheet(1);
-            if (!worksheet) {
-                reject(new Error('Worksheet not found in the uploaded file.'));
-                return;
-            }
-            const rows = [];
-            worksheet.eachRow({ includeEmpty: true }, (row) => {
-                const rowValues = row.values;
-                rowValues.shift(); // Remove the first element which is undefined
-                rows.push(rowValues);
-            });
-            const headers = rows.shift();
-            const data = rows.map(row => {
-                const obj = {};
-                headers.forEach((header, index) => {
-                    obj[header] = row[index];
-                });
-                return obj;
-            });
-            resolve(data);
-        };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file);
-    });
+    } catch (error) {
+        console.error('Error processing Excel file:', error);
+        console.error('Error stack:', error.stack);
+        alert('An error occurred while processing the file. Please check the console for more details.');
+    }
 }
 
 // Function to extract first and last dates
@@ -330,13 +337,3 @@ function writeSectionD(sheet, dfHosp, dfRechazo) {
         writeCell(sheet, cell, count);
 
         const totalCell = `${String.fromCharCode(64 + totalColumn)}${row}`;
-        writeCell(sheet, totalCell, (sheet.getCell(totalCell).value || 0) + fonasaCount);
-    });
-}
-
-// Event listener for process button
-document.getElementById('processButton').addEventListener('click', () => {
-    if (selectedFile) {
-        processExcelFile(selectedFile).catch(console.error);
-    }
-});
