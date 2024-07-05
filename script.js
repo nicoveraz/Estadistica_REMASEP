@@ -98,6 +98,11 @@ async function processExcelFile(inputFile) {
 
     // Get the first sheet
     const sheet = workbook.getWorksheet(1);
+
+    if (!sheet) {
+        console.error('Worksheet not found in the template file.');
+        return;
+    }
   
     // Process the input data
     const cleanedData = inputData.filter(row => row['Diagnóstico'] !== 'NO ESPERA ATENCIÓN' && row['Diagnóstico'] !== 'MAL INGRESADO - FOLIO NULO');
@@ -143,6 +148,10 @@ function readExcelFile(file) {
             const workbook = new ExcelJS.Workbook();
             await workbook.xlsx.load(e.target.result);
             const worksheet = workbook.getWorksheet(1);
+            if (!worksheet) {
+                reject(new Error('Worksheet not found in the uploaded file.'));
+                return;
+            }
             const rows = [];
             worksheet.eachRow({ includeEmpty: true }, (row) => {
                 const rowValues = row.values;
