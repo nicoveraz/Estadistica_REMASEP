@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Proceso Excel REMASEP</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         body, html {
             height: 100%;
@@ -20,16 +17,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-        }
-        .container > * {
-            margin: 10px;
-        }
-        input {
-            margin-bottom: 10px;
-        }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
         }
         a {
             position: fixed;
@@ -53,11 +40,12 @@
     </a>
     <div class="container">
         <h1>Estadística REMASEP</h1>
-        <i>202407.10</i>
+        <i>20240706.1</i>
         <p>Archivo excel "tiempos urgencia" de MK web del mes correspondiente</p>
-        <input type="file" id="fileInput">
-        <button id="processButton" disabled>Process File</button>
+        <input type="file" id="fileInput" accept=".xlsx, .xls">
+        <button id="processButton">Procesar Archivo</button>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
