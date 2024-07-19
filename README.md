@@ -12,10 +12,15 @@ Es una versión web del python notebook utilizado en Clínica Puerto Montt ACHS 
 
 ¿Por qué un cuaderno python y luego un sitio web para esto?
 
->Porque no sé utilizar excel
+>Porque no me gusta utilizar excel
 
-Este sitio web es una derivación del cuaderno python original, utiliza funciones javascript para procesar los datos del reporte excel a nivel local y llenar sobre la plantilla en blanco
+Este sitio web es una derivación del cuaderno python original, utiliza funciones javascript para procesar los datos del reporte excel a nivel local y llenar sobre la plantilla en blanco, permite acceder desde cualquier computardor sin necesidad de configurar el ambiente Python
 
 ## Instrucciones de Uso
 
-## ROADMAP
+Seleccionar archivo
+
+## Pendiente
+
+- [] Mantener estilo de archivo original
+- [] Completar todas las secciones
