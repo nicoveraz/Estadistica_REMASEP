@@ -18,7 +18,7 @@ Este sitio web es una derivación del cuaderno python original, utiliza funcione
 
 ## Instrucciones de Uso
 
-Seleccionar archivo
+Seleccionar archivo excel, exportado desde MK web, del mes correspondiente y presionar el botón procesar. El excel sin formato con los datos se descargará automáticamente
 
 ## Pendiente
 
