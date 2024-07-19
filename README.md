@@ -2,7 +2,7 @@
 
 Este repositorio contiene el código para el sitio para proceso de datos proveniente del reporte excel "Tiempos de Urgencia" de MK web de Clínicas ACHS Salud para la confección del informe REMASEP
 
-Es una versión web del python notebook utilizado en Clínica Puerto Montt ACHS Salud. Aún incompleto
+Es una versión web, replicando con javascript el proceso de datos del cuaderno python utilizado en Clínica Puerto Montt ACHS Salud
 
 ## Seguridad de Datos
 
