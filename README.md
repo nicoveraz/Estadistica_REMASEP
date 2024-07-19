@@ -22,5 +22,6 @@ Seleccionar archivo
 
 ## Pendiente
 
-- [] Mantener estilo de archivo original
-- [] Completar todas las secciones
+- [ ] Mantener estilo de archivo original
+- [ ] Completar todas las secciones
+- [ ] Interfaz para revisar casos dudosos manualmente 
